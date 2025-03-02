@@ -3,7 +3,7 @@ name: Deploy Flask App
 on:
   push:
     branches:
-      - main  # Triggers deployment when code is pushed to the main branch
+      - main  # Deploys when code is pushed to main
 
 jobs:
   deploy:
@@ -20,11 +20,15 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.EC2_PUBLIC_IP }} >> ~/.ssh/known_hosts
 
+      - name: Fix SSH Permissions
+        run: chmod 700 ~/.ssh
+
       - name: Deploy to EC2
         run: |
           ssh ec2-user@${{ secrets.EC2_PUBLIC_IP }} << 'EOF'
-            cd /home/ec2-user/flask-app
-            git pull origin main
-            docker-compose down
-            docker-compose up --build -d
+            set -x
+            cd /home/ec2-user/flask-app || exit 1
+            git pull origin main || exit 1
+            docker-compose down || exit 1
+            docker-compose up --build -d || exit 1
           EOF
